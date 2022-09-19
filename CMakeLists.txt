@@ -1,0 +1,64 @@
+cmake_minimum_required(VERSION 3.0)
+project(streamer)
+
+set(PLUGIN_VERSION "2.9.5")
+
+list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
+list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/lib/cmake-modules")
+list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/lib/eigen/cmake")
+
+set(SAMP_SDK_ROOT "${PROJECT_SOURCE_DIR}/lib/samp-plugin-sdk")
+find_package(SAMPSDK REQUIRED)
+include_directories(${SAMPSDK_DIR})
+include_directories(${SAMPSDK_DIR}/amx)
+
+if(BOOST_ROOT)
+	file(TO_CMAKE_PATH ${BOOST_ROOT} BOOST_ROOT)
+else()
+	set(BOOST_ROOT "${PROJECT_SOURCE_DIR}/lib/boost")
+endif()
+
+set(Boost_USE_STATIC_LIBS ON)
+find_package(Boost 1.65.1 REQUIRED COMPONENTS system)
+include_directories(${Boost_INCLUDE_DIRS})
+
+if(EIGEN3_INCLUDE_DIR)
+	file(TO_CMAKE_PATH ${EIGEN3_INCLUDE_DIR} EIGEN3_INCLUDE_DIR)
+	list(APPEND CMAKE_MODULE_PATH "${EIGEN3_INCLUDE_DIR}/cmake")
+else()
+	set(EIGEN3_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/lib/eigen")
+endif()
+
+find_package(Eigen3 3.3.4 REQUIRED)
+include_directories(${EIGEN3_INCLUDE_DIR})
+
+set(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY True)
+set(CMAKE_SKIP_PACKAGE_ALL_DEPENDENCY True)
+
+add_subdirectory(src)
+
+set(CPACK_PACKAGE_VERSION ${PLUGIN_VERSION})
+
+if(COMMIT_ID)
+	string(TIMESTAMP CURRENT_DATE "%Y%m%d")
+	set(PACKAGE_FILE_NAME streamer-${PLUGIN_VERSION}-${CURRENT_DATE}-${COMMIT_ID})
+else()
+	set(PACKAGE_FILE_NAME streamer-${PLUGIN_VERSION})
+endif()
+
+set(CPACK_OUTPUT_FILE_PREFIX package/${PACKAGE_FILE_NAME})
+
+if(WIN32)
+	set(CPACK_PACKAGE_FILE_NAME ${PACKAGE_FILE_NAME}-win32)
+	set(CPACK_GENERATOR ZIP)
+else()
+	set(CPACK_PACKAGE_FILE_NAME ${PACKAGE_FILE_NAME}-linux)
+	set(CPACK_GENERATOR TGZ)
+endif()
+
+if(CPACK_OUTPUT_FILE_POSTFIX)
+	string(TOLOWER "${CPACK_OUTPUT_FILE_POSTFIX}" CPACK_OUTPUT_FILE_POSTFIX)
+	set(CPACK_PACKAGE_FILE_NAME ${CPACK_PACKAGE_FILE_NAME}-${CPACK_OUTPUT_FILE_POSTFIX})
+endif()
+
+include(CPack)
